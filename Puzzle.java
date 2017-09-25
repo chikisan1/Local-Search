@@ -16,16 +16,17 @@ public class Puzzle{
 		int rowIndex;
 		int colIndex;
 		int jump; 
-		int visited;
 		int level;
 		List<Node> children = new ArrayList<>();
 		
-		Node(int rowIndex, int colIndex, int jump, int visited, List<Node> children){
+		
+		Node(int rowIndex, int colIndex, int jump, int level, List<Node> children){
 			this.rowIndex = rowIndex;
 			this.colIndex = colIndex;
 			this.jump = jump; 
-			this.visited = visited;
+			this.level = level;
 			this.children = children; 
+			
 		}
 	}
 
@@ -38,43 +39,87 @@ public class Puzzle{
 			this.root = root;
 		}
 
-		void addChild(Node parent, Node child){
+		void addChild(Node parent, int[][] matrix, int [][] jumpMatrix, int[][] visitedMatrix, Queue<Node> q){
 
-			int rowDistance = (int) Math.abs(parent.rowIndex - child.rowIndex);
-			int colDistance = (int) Math.abs(parent.colIndex - child.colIndex);
-
-			if(rowDistance == parent.jump || colDistance == parent.jump){
-				parent.children.add(child);
-				child.level = parent.level + 1;
+			// //base case
+			// if(parent.children == null){
+			// 	return parent;
+			// }
+			//adding children to the queue 
+			for(int i = 0; i < parent.children.size(); i++){
+				q.add(parent.children.get(i));
 			}
+			if(q.isEmpty()){
+				return;
+			}
+			//remove the head 
+			Node child = q.remove();
+			if(child.jump == 0){
+				posGoal = child.level;
+			}
+			int level = child.level + 1;
+			child.children = new ArrayList<>();
+			//up
+			if(child.rowIndex - child.jump > 0 && visitedMatrix[child.rowIndex - child.jump][child.colIndex] == 0){
+				Node newNode = new Node(child.rowIndex - child.jump, child.colIndex, matrix[child.rowIndex - child.jump][child.colIndex], level, null);
+				child.children.add(newNode);
+				jumpMatrix[child.rowIndex - child.jump][child.colIndex] = level;
+				//q.add(newNode);
+			}
+			//down
+			if(child.rowIndex + child.jump < matrix.length && visitedMatrix[child.rowIndex + child.jump][child.colIndex] == 0){
+				Node newNode = new Node(child.rowIndex + child.jump, child.colIndex, matrix[child.rowIndex + child.jump][child.colIndex], level, null);
+				child.children.add(newNode);
+				jumpMatrix[child.rowIndex + child.jump][child.colIndex] = level;
+				//q.add(newNode);
+			}
+			//left
+			if(child.colIndex - child.jump > 0 && visitedMatrix[child.rowIndex][child.colIndex - child.jump] == 0){
+				Node newNode = new Node(child.rowIndex, child.colIndex - child.jump, matrix[child.rowIndex][child.colIndex - child.jump], level, null);
+				child.children.add(newNode);
+				jumpMatrix[child.rowIndex][child.colIndex - child.jump] = level;
+				//q.add(newNode);
+			}
+			//down
+			if(child.colIndex + child.jump < matrix.length && visitedMatrix[child.rowIndex][child.colIndex + child.jump] == 0){
+				Node newNode = new Node(child.rowIndex, child.colIndex + child.jump, matrix[child.rowIndex][child.colIndex + child.jump], level, null);
+				child.children.add(newNode);
+				jumpMatrix[child.rowIndex][child.colIndex + child.jump] = level;
+				//q.add(newNode);
+			}
+			visitedMatrix[child.rowIndex][child.colIndex] = 1;
+			System.out.println("row: " + child.rowIndex + " col: " + child.colIndex + " level: " + child.level + " visited: " + visitedMatrix[child.rowIndex][child.colIndex]);
+			for(int i =0; i < child.children.size(); i++){
+				System.out.println(child.children.get(i).rowIndex + " " + child.children.get(i).colIndex );
+			}
+			addChild(child, matrix, visitedMatrix, jumpMatrix, q);
+
 		}
 
-		void fillMatrix(Node cur, int [][] matrix){
-			if(cur != null){
-				int count = cur.children.size();
-				for (int i = 0; i < count; i++) {
-					Node child = cur.children.get(i);
-					matrix[child.rowIndex][child.colIndex] = child.level;
-					System.out.println("row: " + cur.rowIndex + " col: " + cur.colIndex + " jump: " 
-						+ cur.jump + " level: " + cur.level);
-					if(child.jump == 0){
-						posGoal = child.level;
-					}
-					fillMatrix(child, matrix);
-				}
-			}
-			for(int row = 0; row < matrix.length; row++){
-				for(int col = 0; col < matrix.length; col++){
-					if(row == matrix.length - 1 && col == matrix.length - 1){
-						break;
-					}
-					if(matrix[row][col] == 0){
-						//Show X in the GUI
-						negGoal--;
-					}
-				}
-			}
-		}
+		// void fillMatrix(Node cur, int [][] matrix){
+		// 	if(cur != null){
+		// 		//int count = cur.children.size();
+		// 		for (int i = 0; i < count; i++) {
+		// 			Node child = cur.children.get(i);
+		// 			matrix[child.rowIndex][child.colIndex] = child.level;
+		// 			if(child.jump == 0){
+		// 				posGoal = child.level;
+		// 			}
+		// 			fillMatrix(child, matrix);
+		// 		}
+		// 	}
+		// 	for(int row = 0; row < matrix.length; row++){
+		// 		for(int col = 0; col < matrix.length; col++){
+		// 			if(row == matrix.length - 1 && col == matrix.length - 1){
+		// 				break;
+		// 			}
+		// 			if(matrix[row][col] == 0){
+		// 				//Show X in the GUI
+		// 				negGoal--;
+		// 			}
+		// 		}
+		// 	}
+		// }
 		
 		int path(){
 			if(posGoal == 0){
@@ -87,34 +132,22 @@ public class Puzzle{
 
 	}
 	
+
 	//task 2
-	int eval(int[][] matrix, int[][] jumpMatrix){
+	int eval(int[][] matrix, int[][] jumpMatrix, int [][] visitedMatrix){
+		List<Node> children = new ArrayList<>();
+		int jump = matrix[0][0];
+		Node child1 = new Node(0, jump, matrix[0][jump], 1, children);
+		Node child2 = new Node(jump, 0, matrix[jump][0], 1, children);
+		children.add(child1);
+		children.add(child2);
+		Node root = new Node(0, 0, jump, 0, children);
+		Tree tree = new Tree(root);
 		Queue<Node> q = new LinkedList<>();
-		for(int row = 0; row < matrix.length; row++){
-			for(int col = 0; col < matrix.length; col++){
-				List<Node> children = new ArrayList<>();
-				Node cell = new Node(row, col, matrix[row][col], 0, children);
-				q.add(cell);
-			}
-		}
-		Tree tree = new Tree(q.remove());
-		Node parent = tree.root;
-		int escape = 0;
-		while(q != null && escape < 20){
-			Node child = q.peek();
-			tree.addChild(parent, child);
-			if(child.visited == 0){
-				q.add(q.remove()); 
-				escape++;
-			}
-			else{
-				q.remove();
-				parent = child;
-			}
-		}
-		parent = tree.root;
-		tree.fillMatrix(parent, jumpMatrix);
+		tree.addChild(root, matrix, jumpMatrix, visitedMatrix, q);
 		return tree.path();
+
+		
 	}
 	/*
 	//task 3
@@ -139,7 +172,7 @@ public class Puzzle{
 	}
 
 */
-
+	
 	public static void matrixGenerator(int[][] matrix){
 		
 		for(int row = 0; row < matrix.length; row++){
@@ -172,18 +205,22 @@ public class Puzzle{
 
 	public static void main(String[] args){
 
-		System.out.println("Enter size of n");
-		Scanner sc = new Scanner(System.in);
-		int n = sc.nextInt();
-
+		// System.out.println("Enter size of n");
+		// Scanner sc = new Scanner(System.in);
+		// int n = sc.nextInt();
+		int n = 3;
 		int[][] test = new int[n][n];
-		int[][] visited = new int[n][n];
+		int[][] visitedMatrix = new int[n][n];
+		visitedMatrix[0][0] = 1;
 		int[][] jumpMatrix = new int[n][n];
 		matrixGenerator(test);
 		printMatrix(test);
 		System.out.println();
-		printMatrix(visited);
-		int result = new Puzzle().eval(test, jumpMatrix);
+		printMatrix(visitedMatrix);
+		System.out.println();
+		int result = new Puzzle().eval(test, jumpMatrix, visitedMatrix);
+		printMatrix(visitedMatrix);
+		System.out.println();
 		printMatrix(jumpMatrix);
 		System.out.println(result);
 
