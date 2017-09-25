@@ -5,12 +5,16 @@ import java.util.Queue;
 import java.util.*;
 public class Puzzle{
 
-	int [] eval_array = new int [4];
-	int [] hillClimbing_array = new int [4];
-	int [] randomRestarts_array = new int[4];
-	int [] randomWalk_array = new int[4];
-	int [] simulatedAnnealing_array = new int[4];
-	int [] population_array = new int[4];
+	static int [] eval_array = new int [4];
+	static int [] hillClimbing_array = new int [4];
+	static int [] randomRestarts_array = new int[4];
+	static int [] randomWalk_array = new int[4];
+	static int [] simulatedAnnealing_array = new int[4];
+	static int [] population_array = new int[4];
+	static int [][] matrix_five = new int[5][5];
+	static int [][] matrix_seven = new int[7][7];
+	static int [][] matrix_nine = new int[9][9];
+	static int [][] matrix_eleven = new int[11][11];
 
 	public class Node{
 		int rowIndex;
@@ -129,6 +133,37 @@ public class Puzzle{
 		}
 	
 	}
+	public static void storage(int [][] matrix){
+		switch(matrix.length){
+			case 5:
+				matrix_five = matrix;
+			break;
+			case 7:
+				matrix_seven = matrix;
+			break;
+			case 9:
+				matrix_nine = matrix;
+			break;
+			case 11:
+				matrix_eleven= matrix;
+			break;
+		}
+	}
+
+	public static int[][] getMatrix(int dimension){
+		switch(dimension){
+			case 5:
+				return matrix_five;
+			case 7:
+				return matrix_seven;
+			case 9:
+				return matrix_nine;
+			case 11:
+				return matrix_eleven;
+		}
+		return null;
+	}
+
 	//task 2
 	int eval(int[][] matrix){
 		int n = matrix.length;
@@ -186,23 +221,37 @@ public class Puzzle{
 		//fills in the indices 
 		temp[randRow][randCol] = random;
 
-		//int before = new Puzzle().eval(matrix);
+		int before = new Puzzle().eval(matrix);
 		System.out.println("randRow: " + randRow + "randCol: " + randCol + "random: " + random);
 		int after = new Puzzle().eval(temp);
-		//return Math.max(before, after);
-		return after;
+		if(before > after){
+			storage(matrix);
+		}else{
+			storage(temp);
+		}
+		return Math.max(before, after);
 
+	}
+	
+	//task 4
+	int randomRestarts(int dimension, int iteration, int startHill){
+		int hill = 0;
+		int[][] matrix = getMatrix(dimension);
+		while(startHill > 0){
+			hill = new Puzzle().hillClimbing(matrix);
+			while(iteration > 0){
+				//hill = new Puzzle().eval(temp);
+				iteration--;
+			}
+		}
+		return hill; 
+	}
+	
+	//task 5
+	void randomWalk(int iteration, int probability){
 
 	}
 	/*
-	//task 4
-	void randomRestarts(int[][] matrix){
-
-	}
-	//task 5
-	void randomWalk(int[][] matrix){
-
-	}
 	//task 6 
 	void simulatedAnnealing(int[][] matrix){
 
@@ -263,6 +312,9 @@ public class Puzzle{
 
 		int task3 = new Puzzle().hillClimbing(matrix);
 		System.out.println("task3: " + task3);
+
+		// int task4 = new Puzzle().randomRestarts();
+		// System.out.println("task4: " + task4);
 
 	}
 }
