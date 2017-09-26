@@ -11,13 +11,18 @@ import java.lang.String;
 import java.lang.Integer;
 public class Puzzle{
 
-
-	static Result [] eval_array = new Result[4];
 	static Result [] hillClimbing_array = new Result[4];
 	static Result [] randomRestarts_array = new Result[4];
 	static Result [] randomWalk_array = new Result[4];
 	static Result [] simulatedAnnealing_array = new Result[4];
 	static Result [] population_array = new Result[4];
+
+	ArrayList<Integer> hill_plot = new ArrayList<>();
+	ArrayList<Integer> restart_plot = new ArrayList<>();
+	ArrayList<Integer> walk_plot = new ArrayList<>();
+	ArrayList<Integer> anneal_plot = new ArrayList<>();
+	ArrayList<Integer> pop_plot = new ArrayList<>();
+
 
 	static public class Result{
 		int evaluation; 
@@ -434,7 +439,7 @@ public class Puzzle{
 	}
 	
 	//task 5
-	int randomWalk(int [][] matrix, int iteration, int probability, Result [] array){
+	int randomWalk(int [][] matrix, int iteration, double probability, Result [] array){
 		long startTime = System.currentTimeMillis();
 		int walk = 0;
 		if(probability == 0){
@@ -488,8 +493,7 @@ public class Puzzle{
 			before = new Puzzle().eval(dummy);
 			after = new Puzzle().eval(temp);
 			if(before > after){
-				int fifty_fifty = r.nextInt(2) + 1;
-				if(fifty_fifty == 1){
+				if(r.nextDouble() > probability){
 					storeEvaluation(array, dummy, before);
 					storeMatrix(array, dummy);
 					walk = before;
@@ -589,8 +593,38 @@ public class Puzzle{
 		return anneal;
 	}
 	//task 7 
-	int population(int[][] matrix){
-		
+	int population(int [][] matrix, ArrayList<int [][]> randomMatrices, Result [] array){
+		long startTime = System.currentTimeMillis();
+		int n = matrix.length;
+		int [][] dummy = new int [n][n];
+		fillMatrix(dummy, matrix);
+		int [][] temp = new int [n][n];
+		int count = 0;
+		while(false||(System.currentTimeMillis()-startTime)< getTime(array, matrix)){
+			temp = randomMatrices.get(count);
+		    Random r = new Random();
+			int randRow = r.nextInt(matrix.length - 1) + 1;
+			int randCol = r.nextInt(matrix.length - 1) + 1;
+			//prevents the goal from being replaced
+			while(randRow == matrix.length - 1 && randCol == matrix.length - 1){
+				randRow = r.nextInt(matrix.length - 1) + 1;
+				randCol = r.nextInt(matrix.length - 1) + 1;
+			}
+			int limit = (int) Math.max(Math.max(n - 1 - randRow, randRow - n - 1) , 
+					Math.max(n - 1 - randCol, randCol - n - 1));
+			//swap
+			if(dummy[randRow][randCol] < limit && temp[randRow][randRow] < limit){
+				int swap = dummy[randRow][randCol];
+				dummy[randRow][randCol] = temp[randRow][randRow];
+				temp[randRow][randRow] = swap;
+			}
+			// System.out.println(count);
+			// System.out.println(System.currentTimeMillis()-startTime);
+			count++;
+		}
+		printMatrix(dummy);
+		int result = new Puzzle().eval2(getMatrix(array, matrix.length));
+		return count;
 	}
 
 
@@ -674,15 +708,18 @@ public static int[][] matrixfromtext(String filename) throws Exception{int[][] m
 			}
 			printMatrix(matrix);
 			
-		fillDummyResult(eval_array);
 		fillDummyResult(hillClimbing_array);
 		fillDummyResult(randomRestarts_array); 
 		fillDummyResult(randomWalk_array);
 		fillDummyResult(simulatedAnnealing_array);
 		fillDummyResult(population_array);
 
-		//int[][] matrix = new int[n][n];
-		//matrixGenerator(matrix);
+		// long startTime = System.currentTimeMillis();
+		// int[][] matrix2 = new int[11][11];
+		// matrixGenerator(matrix2);
+		// printMatrix(matrix2);
+		// long endTime = System.currentTimeMillis();
+		// System.out.println(endTime - startTime);
 		System.out.println("task2: ");
 		int task2 = new Puzzle().eval2(matrix);
 		//System.out.println("task2: ");
@@ -690,26 +727,41 @@ public static int[][] matrixfromtext(String filename) throws Exception{int[][] m
 
 		int task3 = new Puzzle().hillClimbing(matrix, 100, hillClimbing_array);
 		System.out.println("task3: ");
-		hillClimbing_array[0].print();
+		hillClimbing_array[3].print();
 		int result3 = new Puzzle().eval2(getMatrix(hillClimbing_array, matrix.length));
 
 		System.out.println("task4: ");
 		int task4 = new Puzzle().randomRestarts(matrix, 10, 10, randomRestarts_array);
-		randomRestarts_array[0].print();
+		randomRestarts_array[3].print();
 		int result4 = new Puzzle().eval2(getMatrix(randomRestarts_array, matrix.length));
 		
 		System.out.println("task5: ");
-		int task5 = new Puzzle().randomWalk(matrix, 100, 1, randomWalk_array);
-		randomWalk_array[0].print();
+		int task5 = new Puzzle().randomWalk(matrix, 100, .70, randomWalk_array);
+		randomWalk_array[3].print();
 		int result5 = new Puzzle().eval2(getMatrix(randomWalk_array, matrix.length));
 
 		System.out.println("task6: ");
 		int task6 = new Puzzle().simulatedAnnealing(matrix, 100, 100.00, .85, simulatedAnnealing_array);
-		simulatedAnnealing_array[0].print();
+		simulatedAnnealing_array[3].print();
 		int result6 = new Puzzle().eval2(getMatrix(simulatedAnnealing_array, matrix.length));
 
+		System.out.println("task7: ");
+		ArrayList<int [][]> randomMatrice = new ArrayList<int [][]>(0);
+		for(int i = 0; i < 1000000; i++){
+			int[][] newMatrix = new int[matrix.length][matrix.length];
+			matrixGenerator(newMatrix);
+			randomMatrice.add(newMatrix);
+		}
 
 
+		int task7_hill = new Puzzle().population(matrix, randomMatrice, hillClimbing_array);
+		int task7_restart = new Puzzle().population(matrix, randomMatrice, randomRestarts_array);
+		int task7_walk = new Puzzle().population(matrix, randomMatrice, randomWalk_array);
+		int task7_anneal = new Puzzle().population(matrix, randomMatrice, simulatedAnnealing_array);
+		System.out.println("Iteration comparing hillClimbing: " + task7_hill);
+		System.out.println("Iteration comparing randomRestarts: " + task7_restart);
+		System.out.println("Iteration comparing randomWalk: " + task7_walk);
+		System.out.println("Iteration comparing simulatedAnnealing: " + task7_anneal);
 
 
 
