@@ -17,7 +17,9 @@ import java.awt.event.*;
 public class Puzzle implements ActionListener {
 //GUI 
 	private static int dim;
-	private static int iteration;
+	private static int iter;
+	private static int hillwalk;
+	private static double pro;
      private static int myMatrix [][];
      private static int puzMatrix [][];
      private static int tempMatrix [][]; 
@@ -26,6 +28,9 @@ public class Puzzle implements ActionListener {
      private static JButton task1, task2, task3, task4, task5, task6, task7;
      private static JPanel choosePanel [] = new JPanel[8];
      private static int lastdim;
+     private static int lastit;
+     private static int lasthill;
+     private static double lastpro;
       
      
      Puzzle (){
@@ -45,7 +50,7 @@ public class Puzzle implements ActionListener {
 	choosePanel [1] = new JPanel();
 	choosePanel[0].add(new JLabel("Enter Dimensions") );
 	choosePanel[1].add(field);
-	choosePanel[1].add(Box.createHorizontalStrut(15)); //creates spaces
+	
         
       result = JOptionPane.showConfirmDialog(null, choosePanel, 
                null,JOptionPane.OK_CANCEL_OPTION, 
@@ -85,7 +90,7 @@ public class Puzzle implements ActionListener {
        {
            tempMatrix = myMatrix;
            myMatrix = new int [dim][dim];
-            setElements(myMatrix); //filling the new matrix
+            matrixGenerator(myMatrix); //filling the new matrix
         
        }
        }
@@ -96,71 +101,296 @@ public class Puzzle implements ActionListener {
      }
 
       private static void getIteration(){
-      JTextField field = new JTextField(5); 
-      int iteration = 0;
+      JTextField lField = new JTextField(5); 
+      JTextField rField = new JTextField(5); 
+      
       //design input line
-	JPanel choosePanel [] = new JPanel [2];
-	choosePanel [0] = new JPanel();
-	choosePanel [1] = new JPanel();
-	choosePanel[0].add(new JLabel("Enter Iteration") );
-	choosePanel[1].add(field);
-	choosePanel[1].add(Box.createHorizontalStrut(15)); //creates spaces
+      JPanel choosePanel [] = new JPanel [2];
+       choosePanel [0] = new JPanel();
+       choosePanel [1] = new JPanel();
+      choosePanel[0].add(new JLabel("Dimensions"));
+      choosePanel[1].add(lField);
+      choosePanel[0].add(Box.createHorizontalStrut(15)); // a spacer
+      choosePanel[0].add(new JLabel("Iteration:"));
+      choosePanel[1].add(Box.createHorizontalStrut(15)); 
+      choosePanel[1].add(rField);
         
       result = JOptionPane.showConfirmDialog(null, choosePanel, 
                null,JOptionPane.OK_CANCEL_OPTION, 
                JOptionPane.PLAIN_MESSAGE);
         
+      //save last dimensions
+      lastdim = dim;
+      lastit = iter;
+      
+      //ok option
        if(result == 0)
        {
          
-         if(field.getText().equals(""))
-             iteration= 0;
+         if(rField.getText().equals(""))
+             iter = 0;
          else
          {
-             if(isInt(field.getText()))
+             if(isInt(rField.getText()))
              {
-                 iteration = Integer.parseInt(field.getText());
-                 return;
+                 iter= Integer.parseInt(rField.getText());
              }
              else
              {
-                 JOptionPane.showMessageDialog(null, "Wrong Input");
+                 JOptionPane.showMessageDialog(null, "Wrong Dimensions");
+                 dim = lastdim;
+                 iter = lastit;
                  return;
              }
-           
+            
+             if(isInt(lField.getText()))
+             {
+                 dim = Integer.parseInt(lField.getText());
+             }
+             else
+             {
+                 JOptionPane.showMessageDialog(null, "Wrong Dimensions");
+                 dim = lastdim;
+                 iter = lastit;
+                 return;
+             }
           
          }
-       if(iteration < 1)
+       if(dim < 3 || dim == 4 || dim == 6 || dim == 8 || dim == 10 || iter < 1)
        {
-           JOptionPane.showConfirmDialog(null, "Wrong Input", 
+           JOptionPane.showConfirmDialog(null, "You entered wrong dimensions", 
                    "Error",JOptionPane.PLAIN_MESSAGE);
-           return;
+           dim = lastdim;
+            iter = lastit;
           
        }
+       else
+       {
+            tempMatrix = myMatrix;
+           myMatrix = new int [dim][dim];
+            matrixGenerator(myMatrix); //filling the new matrix
+       }
+       }
+       else if(result == 1)
+       {
+           dim = lastdim;
+           iter = lastit;
+       }
      }
-    }
-     //setting a matrix's elementis
-    private static void setElements(int matrix [][])
-    {
-        for(int row = 0; row < matrix.length; row++){
-            for(int col = 0; col < matrix.length; col++){
-              if(row == matrix.length - 1 && col == matrix.length - 1){
-                break;
-              }
-              //creates a random class
-              Random rand = new Random();
-              //max number of jump for the index 
-              int limit = (int) Math.max(Math.max(matrix.length - 1 - row, row - matrix.length - 1) , 
-                Math.max(matrix.length - 1 - col, col - matrix.length - 1));
-              //generates a random number from 1 to n - 1 
-              int n = rand.nextInt((limit - 1) + 1) + 1;
-              //fills in the indices 
-              matrix[row][col] = n;
-              //if the middle index is n - 1 then we randomly reassign it until it is not n - 1
-        }   
-    }
-    }//end get Inputs
+
+     private static void getRestart(){
+      JTextField lField = new JTextField(5); 
+      JTextField rField = new JTextField(5); 
+      JTextField hField = new JTextField(5); 
+      JPanel choosePanel [] = new JPanel [2];
+      choosePanel [0] = new JPanel();
+      choosePanel [1] = new JPanel();
+      choosePanel[0].add(new JLabel("Dimensions"));
+      choosePanel[1].add(lField);
+      choosePanel[0].add(Box.createHorizontalStrut(15)); 
+      choosePanel[0].add(new JLabel("Iteration:"));
+      choosePanel[1].add(Box.createHorizontalStrut(15)); 
+      choosePanel[1].add(rField);
+      choosePanel[0].add(Box.createHorizontalStrut(15)); // a spacer
+      choosePanel[0].add(new JLabel("Hillclimb:"));
+      choosePanel[1].add(hField);
+        
+      result = JOptionPane.showConfirmDialog(null, choosePanel, 
+               null,JOptionPane.OK_CANCEL_OPTION, 
+               JOptionPane.PLAIN_MESSAGE);
+        
+      //save last dimensions
+      lastdim = dim;
+      lastit = iter;
+      lasthill = hillwalk;
+      
+      //ok option
+       if(result == 0)
+       {
+         
+         if(rField.getText().equals(""))
+             iter = 0;
+         else
+         {
+             if(isInt(rField.getText()))
+             {
+                 iter= Integer.parseInt(rField.getText());
+             }
+             else
+             {
+                 JOptionPane.showMessageDialog(null, "Wrong Dimensions");
+                 dim = lastdim;
+                 iter = lastit;
+                 hillwalk = lasthill;
+                 return;
+             }
+            
+             if(isInt(lField.getText()))
+             {
+                 dim = Integer.parseInt(lField.getText());
+             }
+             else
+             {
+                 JOptionPane.showMessageDialog(null, "Wrong Dimensions");
+                 dim = lastdim;
+                 iter = lastit;
+                 hillwalk = lasthill;
+                 return;
+             }
+             if(isDouble(rField.getText()))
+             {
+                 pro = Double.parseDouble(hField.getText());
+             }
+             else
+             {
+                 JOptionPane.showMessageDialog(null, "Wrong Dimensions");
+                 dim = lastdim;
+                 iter = lastit;
+                 hillwalk = lasthill;
+                 return;
+             }
+          
+         }
+       if(dim < 3 || dim == 4 || dim == 6 || dim == 8 || dim == 10 || iter < 1)
+       {
+           JOptionPane.showConfirmDialog(null, "You entered wrong dimensions", 
+                   "Error",JOptionPane.PLAIN_MESSAGE);
+           dim = lastdim;
+                 iter = lastit;
+                 hillwalk = lasthill;
+          
+       }
+       else
+       {
+            tempMatrix = myMatrix;
+           myMatrix = new int [dim][dim];
+            matrixGenerator(myMatrix); //filling the new matrix
+       }
+       }
+       else if(result == 1)
+       {
+           dim = lastdim;
+	       iter = lastit;
+	       hillwalk = lasthill;
+       }
+     }
     
+     private static void getProbability(){
+      JTextField lField = new JTextField(5); 
+      JTextField rField = new JTextField(5); 
+      JTextField hField = new JTextField(5); 
+      JPanel choosePanel [] = new JPanel [2];
+      choosePanel [0] = new JPanel();
+      choosePanel [1] = new JPanel();
+      choosePanel[0].add(new JLabel("Dimensions"));
+      choosePanel[1].add(lField);
+      choosePanel[0].add(Box.createHorizontalStrut(15)); 
+      choosePanel[0].add(new JLabel("Iteration:"));
+      choosePanel[1].add(Box.createHorizontalStrut(15)); 
+      choosePanel[1].add(rField);
+      choosePanel[0].add(Box.createHorizontalStrut(15)); // a spacer
+      choosePanel[0].add(new JLabel("Probability:"));
+      choosePanel[1].add(hField);
+        
+      result = JOptionPane.showConfirmDialog(null, choosePanel, 
+               null,JOptionPane.OK_CANCEL_OPTION, 
+               JOptionPane.PLAIN_MESSAGE);
+        
+      //save last dimensions
+      lastdim = dim;
+      lastit = iter;
+      lastpro = pro;
+      
+      //ok option
+       if(result == 0)
+       {
+         
+         if(rField.getText().equals(""))
+             iter = 0;
+         else
+         {
+             if(isInt(rField.getText()))
+             {
+                 iter= Integer.parseInt(rField.getText());
+             }
+             else
+             {
+                 JOptionPane.showMessageDialog(null, "Wrong Dimensions");
+                 dim = lastdim;
+                 iter = lastit;
+                 pro = lastpro;
+                 return;
+             }
+            
+             if(isInt(lField.getText()))
+             {
+                 dim = Integer.parseInt(lField.getText());
+             }
+             else
+             {
+                 JOptionPane.showMessageDialog(null, "Wrong Dimensions");
+                 dim = lastdim;
+                 iter = lastit;
+                 pro = lastpro;
+                 return;
+             }
+             if(isDouble(hField.getText()))
+             {
+                 pro = Double.parseDouble(hField.getText());
+             }
+             else
+             {
+                 JOptionPane.showMessageDialog(null, "Wrong Dimensions");
+                 dim = lastdim;
+                 iter = lastit;
+                 pro = lastpro;
+                 return;
+             }
+          
+         }
+       if(dim < 3 || dim == 4 || dim == 6 || dim == 8 || dim == 10 || iter < 1)
+       {
+           JOptionPane.showConfirmDialog(null, "You entered wrong dimensions", 
+                   "Error",JOptionPane.PLAIN_MESSAGE);
+           dim = lastdim;
+            iter = lastit;
+          
+       }
+       else
+       {
+            tempMatrix = myMatrix;
+           myMatrix = new int [dim][dim];
+            matrixGenerator(myMatrix); //filling the new matrix
+       }
+       }
+       else if(result == 1)
+       {
+           dim = lastdim;
+           iter = lastit;
+       }
+     }
+    
+   
+    public static void matrixGenerator(int[][] matrix){
+		
+		for(int row = 0; row < matrix.length; row++){
+			for(int col = 0; col < matrix.length; col++){
+				if(row == matrix.length - 1 && col == matrix.length - 1){
+					break;
+				}
+				//creates a random class
+				Random rand = new Random();
+				//max number of jump for the index 
+				int limit = (int) Math.max(Math.max(matrix.length - 1 - row, row - matrix.length - 1) , 
+					Math.max(matrix.length - 1 - col, col - matrix.length - 1));
+				//generates a random number from 1 to n - 1 
+				int n = rand.nextInt((limit - 1) + 1) + 1;
+				//fills in the indices 
+				matrix[row][col] = n;
+				//if the middle index is n - 1 then we randomly reassign it until it is not n - 1
+			}		
+		}
+	}
     //for setting spaced fields as zeros
      private static void checkTextField (JTextField field [][] )
      {
@@ -248,34 +478,68 @@ public class Puzzle implements ActionListener {
         
         else if(e.getSource() == task3)
         {
-            getDimension();
             getIteration();
-            int task3 = new Puzzle().hillClimbing(myMatrix, iteration, hillClimbing_array);
-            showBest(myMatrix, getEvaluation(hillClimbing_array, dim), getTime(hillClimbing_array, dim));
+            int [][] dummy = new int[myMatrix.length][myMatrix.length];
+            fillMatrix(dummy, myMatrix);
+            System.out.println("dummy:");
+            System.out.println();
+            printMatrix(dummy);
+            int task3 = new Puzzle().hillClimbing(dummy, iter, hillClimbing_array);
+			System.out.println("task3: ");
+			int getIndex = (dummy.length-3)/3;
+			System.out.println(dummy.length + " Index: " + getIndex);
+			hillClimbing_array[getIndex].print();
+			int result3 = new Puzzle().eval2(getMatrix(hillClimbing_array, dummy.length));
+            // printMatrix(getMatrix(hillClimbing_array, dim));
+            showBest(hillClimbing_array[getIndex]);
         }
-         
-        else  if(e.getSource() == task4)
+         /*
+        else if(e.getSource() == task4)
         {
-            getDimension();
-            showBest(myMatrix, 1, 1);
+            getRestart();
+            int [][] dummy = new int[myMatrix.length][myMatrix.length];
+            fillMatrix(dummy, myMatrix);
+            System.out.println("dummy:");
+            System.out.println();
+            printMatrix(dummy);
+            int task4 = new Puzzle().randomRestarts(dummy, iter, hillwalk, randomRestarts_array);
+			System.out.println("task3: ");
+			int getIndex = (dummy.length-3)/3;
+			System.out.println(dummy.length + " Index: " + getIndex);
+			randomRestarts_array[getIndex].print();
+			int result4 = new Puzzle().eval2(getMatrix(randomRestarts_array, dummy.length));
+            // printMatrix(getMatrix(hillClimbing_array, dim));
+            showBest(randomRestarts_array[getIndex]);
+            
         }
         else if(e.getSource() == task5)
         {
-            getDimension();
-            showBest(myMatrix, 1, 1);
+            getProbability();
+            int [][] dummy = new int[myMatrix.length][myMatrix.length];
+            fillMatrix(dummy, myMatrix);
+            System.out.println("dummy:");
+            System.out.println();
+            printMatrix(dummy);
+            int task5 = new Puzzle().randomWalk(dummy, iter, pro, randomWalk_array);
+			System.out.println("task3: ");
+			int getIndex = (dummy.length-3)/3;
+			System.out.println(dummy.length + " Index: " + getIndex);
+			randomWalk_array[getIndex].print();
+			int result5 = new Puzzle().eval2(getMatrix(randomWalk_array, dummy.length));
+            showBest(randomWalk_array[getIndex]);
         }
         
         else if(e.getSource() ==  task6)
         {
             getDimension();
-            showBest(myMatrix, 1, 1);
+            //showBest(myMatrix, 1, 1);
         }
          else if(e.getSource() == task7)
         {
             getDimension();
             showPop(myMatrix, 1, 1);
         }
-        
+        */
     }//end action performed
 
     
@@ -303,9 +567,9 @@ public class Puzzle implements ActionListener {
                  }
               }
                
-           }//end col loop
+           }
            
-       }//end row loop
+       }
        
     if(dim == 0)
     {
@@ -346,7 +610,9 @@ public class Puzzle implements ActionListener {
        }
 
        int t2 = new Puzzle().eval2(matrix);
-       System.out.println(t2);
+       if(t2 < 0){
+       	t2 = t2/2;
+       }
        int line = i + 1;
        choosePanel[line] = new JPanel ();
        choosePanel[line].add( new JLabel ("Output") );
@@ -358,11 +624,11 @@ public class Puzzle implements ActionListener {
            {
            		
               if(jumpMatrix2[k][j] == 0){
-              	if(i == 0 && j == 0){
-              		choosePanel[line].add(new JLabel("%d", 0));
+              	if(k == 0 && j == 0){
+              		choosePanel[line].add(new JLabel(String.format("%d", 0)));
               	}
                 else{
-                	choosePanel[line].add(new JLabel("X"));
+                	choosePanel[line].add(new JLabel(String.format("X")));
                 }
               }else{
                 choosePanel[line].add(new JLabel(String.format("%d", jumpMatrix2[k][j])));
@@ -381,14 +647,18 @@ public class Puzzle implements ActionListener {
        choosePanel[line].add( new JLabel ("Value: " + String.format("%d", t2)));
        
    
+    
+   	
     JOptionPane.showMessageDialog(null, choosePanel, null, 
             JOptionPane.PLAIN_MESSAGE, null);
-    
+
     }
 
 
-   private static void showBest(int [][] matrix, int val, long time){
-       
+   private static void showBest(Result mbest){
+   		int [][] matrix = mbest.bestMatrix;
+   		int val = mbest.evaluation;
+   		long time = mbest.time;
        JPanel choosePanel [] = new JPanel [(matrix.length+1)*3];
        choosePanel[0] = new JPanel ();
        choosePanel[0].add( new JLabel ("Input") );
@@ -405,18 +675,19 @@ public class Puzzle implements ActionListener {
               }else{
                 choosePanel[i].add(new JLabel(String.format("%d", matrix[i-1][j])));
                
-                 if(j < matrix[0].length -1){
+                 
+              }
+
+              if(j < matrix[0].length -1){
                     choosePanel[i].add(Box.createHorizontalStrut(15)); // a spacer
                  }
-              }
                
-           }//end col loop
+           }
            
-       }//end row loop
+       }
        int line = i + 1;
        choosePanel[line] = new JPanel ();
        choosePanel[line].add( new JLabel ("Output") );
-
        line++;
        for(int k = 0; k < matrix.length; k++)
        {
@@ -424,19 +695,25 @@ public class Puzzle implements ActionListener {
            
            for(int j = 0; j < matrix.length; j++)
            {
-              if(matrix[k][j] == 0){
-                choosePanel[line].add(new JLabel(String.format("X")));
+              if(jumpMatrix2[k][j] == 0){
+              	if(k == 0 && j == 0){
+              		choosePanel[line].add(new JLabel(String.format("%d", 0)));
+              	}
+                else{
+                	choosePanel[line].add(new JLabel(String.format("X")));
+                }
               }else{
-                choosePanel[line].add(new JLabel(String.format("%d", matrix[k][j])));
+                choosePanel[line].add(new JLabel(String.format("%d", jumpMatrix2[k][j])));
                
-                 if(j < matrix[0].length -1){
-                    choosePanel[line].add(Box.createHorizontalStrut(15)); // a spacer
-                 }
+             
               }
                
-           }//end col loop
+               if(j < matrix[0].length -1){
+                    choosePanel[line].add(Box.createHorizontalStrut(15)); // a spacer
+                 }
+           }
            line++;
-       }//
+       }
        choosePanel[line] = new JPanel ();
        choosePanel[line].add( new JLabel ("Output") );
        line++;
@@ -446,16 +723,10 @@ public class Puzzle implements ActionListener {
        choosePanel[line] = new JPanel ();
        choosePanel[line].add( new JLabel ("Time: " + String.format("%d", time)));
        
-    if(dim == 0)
-    {
-        JOptionPane.showMessageDialog(null, "You haven't entered any matrix");
-    }
-    else
-    {
-    
+   
     JOptionPane.showMessageDialog(null, choosePanel, null, 
             JOptionPane.PLAIN_MESSAGE, null);
-    }  
+ 
     }
 
     private static void showPop(int [][] matrix, int val, int iteration){
@@ -543,6 +814,25 @@ public class Puzzle implements ActionListener {
        {
            if(str.charAt(temp) != '+' && str.charAt(temp) != '-'
                    && !Character.isDigit(str.charAt(temp)))
+           {
+               return false;
+           }
+       }
+       return true;
+   }
+
+    private static boolean isDouble (String str)
+   {
+       int temp;
+       if (str.length() == '0')
+           return false;
+       
+       for(temp = 0; temp < str.length();temp++)
+       {
+           if(str.charAt(temp) != '+' && str.charAt(temp) != '-'
+                   && str.charAt(temp) != '.'
+                   && !Character.isDigit(str.charAt(temp))
+                   )
            {
                return false;
            }
@@ -851,8 +1141,8 @@ public class Puzzle implements ActionListener {
 		System.out.println("Jump ");
 		printMatrix(jumpMatrix);
 		System.out.println("Min Distance to Goal: " + tree.path(jumpMatrix));
-		jumpMatrix2 = jumpMatrix;
 		//System.out.println("start: " + startTime + "end: " + endTime + "totalTime: " + totalTime);
+		jumpMatrix2 = jumpMatrix;
 		return tree.path(jumpMatrix);
 	}
 	int eval(int[][] matrix){
@@ -887,21 +1177,27 @@ public class Puzzle implements ActionListener {
 		// System.out.println();
 		long endTime   = System.currentTimeMillis();
 		long totalTime = endTime - startTime;
+		jumpMatrix2 = jumpMatrix;
 		return tree.path(jumpMatrix);
 
 	}
 	
 	//task 3
 	int hillClimbing(int [][] matrix, int iteration, Result [] array){
+		System.out.print(iteration);
 		long startTime = System.currentTimeMillis();
 		int n = matrix.length;
+		printMatrix(matrix);
 		int [][] dummy = new int[n][n];
+		printMatrix(dummy);
 		fillMatrix(dummy, matrix);
-		int before = new Puzzle().eval(matrix);
+		int before = new Puzzle().eval(dummy);
+		System.out.print(949);
 		int after = 0;
 		int listCount = 0;
 		int xplot = iteration + 1;
 		while(iteration > 0){
+			//System.out.print(952);
 			int [][] temp = new int[n][n];
 			fillMatrix(temp, dummy);
 			int[][] visitedMatrix = new int[n][n];
@@ -938,6 +1234,9 @@ public class Puzzle implements ActionListener {
 
 			before = new Puzzle().eval(dummy);
 			after = new Puzzle().eval(temp);
+
+			System.out.println("999 bfore "+ before);
+			System.out.println("999 after "+ after);
 			if(before > after){
 				storeEvaluation(array, dummy, before);
 				storeMatrix(array, dummy);
@@ -948,13 +1247,14 @@ public class Puzzle implements ActionListener {
 			dummy = getMatrix(array, matrix.length);
 			hill_plot.add(Math.max(before, after));
 			int printX = (int) Math.abs(iteration - xplot);
-			System.out.print("(" + printX + "," + hill_plot.get(listCount) + ")");
+			//System.out.print("(" + printX + "," + hill_plot.get(listCount) + ")");
 			listCount++;
 			iteration--;
 		}
 		long endTime = System.currentTimeMillis();
 		long totalTime = endTime - startTime;
 		storeTime(array, getMatrix(array, matrix.length), totalTime);
+		System.out.print("endwork");
 		return Math.max(before, after);
 
 	}
@@ -1177,26 +1477,7 @@ public class Puzzle implements ActionListener {
 
 
 	
-	public static void matrixGenerator(int[][] matrix){
-		
-		for(int row = 0; row < matrix.length; row++){
-			for(int col = 0; col < matrix.length; col++){
-				if(row == matrix.length - 1 && col == matrix.length - 1){
-					break;
-				}
-				//creates a random class
-				Random rand = new Random();
-				//max number of jump for the index 
-				int limit = (int) Math.max(Math.max(matrix.length - 1 - row, row - matrix.length - 1) , 
-					Math.max(matrix.length - 1 - col, col - matrix.length - 1));
-				//generates a random number from 1 to n - 1 
-				int n = rand.nextInt((limit - 1) + 1) + 1;
-				//fills in the indices 
-				matrix[row][col] = n;
-				//if the middle index is n - 1 then we randomly reassign it until it is not n - 1
-			}		
-		}
-	}
+	
 public static int[][] matrixfromtext(String filename) throws Exception{int[][] matrix2 = null;
 	BufferedReader temp = new BufferedReader(new FileReader(filename));
 		String line;
@@ -1248,7 +1529,6 @@ public static int[][] matrixfromtext(String filename) throws Exception{int[][] m
 		// 				{2,3,1,1,3},
 		// 				{1,1,3,2,0}
 		// 				};
-		int[][] matrix = null;
 	try{
 		puzMatrix = matrixfromtext(args[0]);
 		} catch (Exception e){
@@ -1270,45 +1550,45 @@ public static int[][] matrixfromtext(String filename) throws Exception{int[][] m
 		// System.out.println(endTime - startTime);
 		Puzzle p1 = new Puzzle();
 		//System.out.println("task2: ");
-		//eval_array[0].print();
+		// //eval_array[0].print();
 
-		int task3 = new Puzzle().hillClimbing(matrix, 100, hillClimbing_array);
-		System.out.println("task3: ");
-		hillClimbing_array[3].print();
-		int result3 = new Puzzle().eval2(getMatrix(hillClimbing_array, matrix.length));
+		// int task3 = new Puzzle().hillClimbing(matrix, 100, hillClimbing_array);
+		// System.out.println("task3: ");
+		// hillClimbing_array[3].print();
+		// int result3 = new Puzzle().eval2(getMatrix(hillClimbing_array, matrix.length));
 
-		System.out.println("task4: ");
-		int task4 = new Puzzle().randomRestarts(matrix, 10, 10, randomRestarts_array);
-		randomRestarts_array[3].print();
-		int result4 = new Puzzle().eval2(getMatrix(randomRestarts_array, matrix.length));
+		// System.out.println("task4: ");
+		// int task4 = new Puzzle().randomRestarts(matrix, 10, 10, randomRestarts_array);
+		// randomRestarts_array[3].print();
+		// int result4 = new Puzzle().eval2(getMatrix(randomRestarts_array, matrix.length));
 		
-		System.out.println("task5: ");
-		int task5 = new Puzzle().randomWalk(matrix, 100, .70, randomWalk_array);
-		randomWalk_array[3].print();
-		int result5 = new Puzzle().eval2(getMatrix(randomWalk_array, matrix.length));
+		// System.out.println("task5: ");
+		// int task5 = new Puzzle().randomWalk(matrix, 100, .70, randomWalk_array);
+		// randomWalk_array[3].print();
+		// int result5 = new Puzzle().eval2(getMatrix(randomWalk_array, matrix.length));
 
-		System.out.println("task6: ");
-		int task6 = new Puzzle().simulatedAnnealing(matrix, 100, 100.00, .85, simulatedAnnealing_array);
-		simulatedAnnealing_array[3].print();
-		int result6 = new Puzzle().eval2(getMatrix(simulatedAnnealing_array, matrix.length));
+		// System.out.println("task6: ");
+		// int task6 = new Puzzle().simulatedAnnealing(matrix, 100, 100.00, .85, simulatedAnnealing_array);
+		// simulatedAnnealing_array[3].print();
+		// int result6 = new Puzzle().eval2(getMatrix(simulatedAnnealing_array, matrix.length));
 
-		System.out.println("task7: ");
-		ArrayList<int [][]> randomMatrice = new ArrayList<int [][]>(0);
-		for(int i = 0; i < 1000000; i++){
-			int[][] newMatrix = new int[matrix.length][matrix.length];
-			matrixGenerator(newMatrix);
-			randomMatrice.add(newMatrix);
-		}
+		// System.out.println("task7: ");
+		// ArrayList<int [][]> randomMatrice = new ArrayList<int [][]>(0);
+		// for(int i = 0; i < 1000000; i++){
+		// 	int[][] newMatrix = new int[matrix.length][matrix.length];
+		// 	matrixGenerator(newMatrix);
+		// 	randomMatrice.add(newMatrix);
+		// }
 
 
-		int task7_hill = new Puzzle().population(matrix, randomMatrice, hillClimbing_array);
-		int task7_restart = new Puzzle().population(matrix, randomMatrice, randomRestarts_array);
-		int task7_walk = new Puzzle().population(matrix, randomMatrice, randomWalk_array);
-		int task7_anneal = new Puzzle().population(matrix, randomMatrice, simulatedAnnealing_array);
-		System.out.println("Iteration comparing hillClimbing: " + task7_hill);
-		System.out.println("Iteration comparing randomRestarts: " + task7_restart);
-		System.out.println("Iteration comparing randomWalk: " + task7_walk);
-		System.out.println("Iteration comparing simulatedAnnealing: " + task7_anneal);
+		// int task7_hill = new Puzzle().population(matrix, randomMatrice, hillClimbing_array);
+		// int task7_restart = new Puzzle().population(matrix, randomMatrice, randomRestarts_array);
+		// int task7_walk = new Puzzle().population(matrix, randomMatrice, randomWalk_array);
+		// int task7_anneal = new Puzzle().population(matrix, randomMatrice, simulatedAnnealing_array);
+		// System.out.println("Iteration comparing hillClimbing: " + task7_hill);
+		// System.out.println("Iteration comparing randomRestarts: " + task7_restart);
+		// System.out.println("Iteration comparing randomWalk: " + task7_walk);
+		// System.out.println("Iteration comparing simulatedAnnealing: " + task7_anneal);
 
 	}
 }
